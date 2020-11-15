@@ -345,7 +345,7 @@ void TcpConnection::connectDestroyed()
   channel_->remove();
 }
 
-void TcpConnection::handleRead(Timestamp receiveTime)
+void TcpConnection::handleRead(Timestamp receiveTime)//对端关闭时connfd也会变成epollin
 {
   loop_->assertInLoopThread();
   int savedErrno = 0;
@@ -354,7 +354,7 @@ void TcpConnection::handleRead(Timestamp receiveTime)
   {
     messageCallback_(shared_from_this(), &inputBuffer_, receiveTime);
   }
-  else if (n == 0)
+  else if (n == 0)//这时就要用n==0来判断是不是连接着的。
   {
     handleClose();
   }

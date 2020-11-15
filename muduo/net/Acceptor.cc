@@ -20,13 +20,13 @@
 
 using namespace muduo;
 using namespace muduo::net;
-
+//使用流程：Acceptor acceptor（xx，xx，xx）；acceptor.listen
 Acceptor::Acceptor(EventLoop* loop, const InetAddress& listenAddr, bool reuseport)
   : loop_(loop),
-    acceptSocket_(sockets::createNonblockingOrDie(listenAddr.family())),
-    acceptChannel_(loop, acceptSocket_.fd()),
+    acceptSocket_(sockets::createNonblockingOrDie(listenAddr.family())),//设置sockfd，channel
+    acceptChannel_(loop, acceptSocket_.fd()),//channel构造函数第二个参数为非引用
     listening_(false),
-    idleFd_(::open("/dev/null", O_RDONLY | O_CLOEXEC))
+    idleFd_(::open("/dev/null", O_RDONLY | O_CLOEXEC))//空文件描述符
 {
   assert(idleFd_ >= 0);
   acceptSocket_.setReuseAddr(true);
@@ -43,12 +43,12 @@ Acceptor::~Acceptor()
   ::close(idleFd_);
 }
 
-void Acceptor::listen()
+void Acceptor::listen()  //让持有listenfd的channel加入poll\epoll
 {
   loop_->assertInLoopThread();
   listening_ = true;
-  acceptSocket_.listen();       //监听；
-  acceptChannel_.enableReading(); //使Channel的events设为可读
+  acceptSocket_.listen();      
+  acceptChannel_.enableReading();
 }
 
 void Acceptor::handleRead() // 改进成这个回调函数创建connfd的Channle加入管道，运用epoll监听事件

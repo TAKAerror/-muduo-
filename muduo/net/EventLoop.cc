@@ -84,8 +84,8 @@ EventLoop::EventLoop()
   {
     t_loopInThisThread = this;
   }
-  wakeupChannel_->setReadCallback(
-      std::bind(&EventLoop::handleRead, this));
+  wakeupChannel_->setReadCallback(  
+      std::bind(&EventLoop::handleRead, this));//将wakeupFD构建的channel加入poll\epoll，以备将来唤醒可能阻塞在poll的loop
   // we are always reading the wakeupfd
   wakeupChannel_->enableReading();
 }
@@ -178,7 +178,7 @@ size_t EventLoop::queueSize() const
 
 TimerId EventLoop::runAt(Timestamp time, TimerCallback cb)
 {
-  return timerQueue_->addTimer(std::move(cb), time, 0.0);
+  return timerQueue_->addTimer(std::move(cb), time, 0.0);//向timerQueue放入定时器，调用runinloop在线程调用回调函数cb
 }
 
 TimerId EventLoop::runAfter(double delay, TimerCallback cb)

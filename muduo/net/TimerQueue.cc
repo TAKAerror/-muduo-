@@ -135,7 +135,7 @@ void TimerQueue::addTimerInLoop(Timer* timer)
   bool earliestChanged = insert(timer);
 
   if (earliestChanged)
-  {
+  { //处理过期定时器
     resetTimerfd(timerfd_, timer->expiration());
   }
 }
@@ -239,18 +239,18 @@ bool TimerQueue::insert(Timer* timer)
   bool earliestChanged = false;
   Timestamp when = timer->expiration();
   TimerList::iterator it = timers_.begin();
-  if (it == timers_.end() || when < it->first)
+  if (it == timers_.end() || when < it->first)//检查有没有定时器已经到期了
   {
     earliestChanged = true;
   }
   {
     std::pair<TimerList::iterator, bool> result
-      = timers_.insert(Entry(when, timer));
+      = timers_.insert(Entry(when, timer));  //将定时器放入list
     assert(result.second); (void)result;
   }
   {
     std::pair<ActiveTimerSet::iterator, bool> result
-      = activeTimers_.insert(ActiveTimer(timer, timer->sequence()));
+      = activeTimers_.insert(ActiveTimer(timer, timer->sequence()));//将定时器放入list
     assert(result.second); (void)result;
   }
 

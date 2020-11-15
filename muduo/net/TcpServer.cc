@@ -19,14 +19,14 @@
 using namespace muduo;
 using namespace muduo::net;
 
-TcpServer::TcpServer(EventLoop* loop,                   //tcpserver流程如下：创建server，构造Acceptor，调用start函数使Acceptor调用lesting函数，该函数使Acceptor封装的Channle可读并update，Acceptor绑定了NewConnection,当channle可读使，调用handread，handread调用该函数，该回调函数传递connfd(connfd在Acceptor的handread创建），创建TCPconnnectionptr conn，将read、wirte、conne等回调函数
-                     const InetAddress& listenAddr,     //绑到conn里面的回调函数，调用conn里面的establishconnection创建connfd的channel放入poll/epoll等待pollin事件，再根据revents调用绑定的read、write
-                     const string& nameArg,             //回调函数
-                     Option option)                     //connect回调函数分别在建立连接和接受连接时调用一次
-  : loop_(CHECK_NOTNULL(loop)),
-    ipPort_(listenAddr.toIpPort()),
-    name_(nameArg),
-    acceptor_(new Acceptor(loop, listenAddr, option == kReusePort)),
+TcpServer::TcpServer(EventLoop* loop,                   //tcpserver流程如下：创建server时析构函数主要工作：构造Acceptor，Acceptor绑定newConnectionCallback
+                     const InetAddress& listenAddr,     //调用start函数，start函数主要：使Acceptor调用lesting函数，（listening作用见Acceptor.cc），epoll/poll开始关注listenfd
+                     const string& nameArg,             //listenfd可读时，Acceptor的channel调用handread，handread调用newConnectionCallback。     
+                     Option option)                     //newConnectionCallback第一个参数复制connfd(connfd在Acceptor的handread创建），然后创建TCPconnnectionptr conn，将readcallback、wirtecallback、connectionallback等回调函数        
+  : loop_(CHECK_NOTNULL(loop)),                         //绑到conn里面的回调函数，然后用runinloop调用conn里的establishconnection；
+    ipPort_(listenAddr.toIpPort()),                    //establishconnection创建持有connfd的channel放入poll/epoll等待pollin事件，触发epollin\epollout等事件时调用handread\handwrite\etc..，handread\handwrite\etc...调用绑到conn里面的writecallback\readcallback回调函数;
+    name_(nameArg),                                     
+    acceptor_(new Acceptor(loop, listenAddr, option == kReusePort)),//PS：：connectioncallback回调函数会在建立连接和接受连接时调用一次
     threadPool_(new EventLoopThreadPool(loop, name_)),
     connectionCallback_(defaultConnectionCallback),
     messageCallback_(defaultMessageCallback),
